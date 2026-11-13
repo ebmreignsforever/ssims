@@ -11,6 +11,7 @@
     "dev:backend": "pnpm --dir backend dev",
     "dev:frontend": "pnpm --dir frontend dev",
     "build": "pnpm --dir backend build && pnpm --dir frontend build",
+    "start": "node scripts/start-platform.mjs",
     "test": "pnpm --dir backend test",
     "test:e2e": "node scripts/e2e-smoke.mjs",
     "test:functional": "node scripts/functional-e2e.mjs",
