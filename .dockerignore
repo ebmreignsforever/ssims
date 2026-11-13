@@ -11,4 +11,7 @@ pg-local.log
 infra/certs/generated
 coverage
 artifacts
+final-build
+SSIMS-*.zip
+*.tar
 *.log

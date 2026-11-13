@@ -26,5 +26,11 @@ infra/certs/generated/*
 logs/
 coverage/
 .vite/
+
+# Local distributables (large build outputs; must never be committed)
+final-build/
+SSIMS-*.zip
+*.tar
+
 .DS_Store
 Thumbs.db
