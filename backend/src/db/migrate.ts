@@ -44,10 +44,41 @@ async function migrate(): Promise<void> {
       )
     `);
 
+    let skipRoleBootstrap = process.env.SKIP_ROLE_BOOTSTRAP === 'true';
+    if (!skipRoleBootstrap) {
+      const roleState = await client.query<{
+        can_create: boolean;
+        app_role: boolean;
+        readonly_role: boolean;
+      }>(`
+        SELECT (r.rolsuper OR r.rolcreaterole) AS can_create,
+               EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ssims_app') AS app_role,
+               EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ssims_readonly') AS readonly_role
+          FROM pg_roles r
+         WHERE r.rolname = current_user
+      `);
+      const state = roleState.rows[0];
+      if (state && !state.can_create && (!state.app_role || !state.readonly_role)) {
+        skipRoleBootstrap = true;
+        logger.warn(
+          'Managed PostgreSQL user cannot CREATE ROLE; skipping 002_least_privilege_grants.sql. ' +
+            'Use a managed single-role database only for hosted demos; Compose keeps separate roles.',
+        );
+      }
+    }
+
     const files = fs
       .readdirSync(migrationsDir)
       .filter((file) => file.endsWith('.sql'))
+      .filter((file) => !(skipRoleBootstrap && file.startsWith('002_')))
       .sort();
+
+    if (process.env.SKIP_ROLE_BOOTSTRAP === 'true') {
+      logger.warn(
+        'SKIP_ROLE_BOOTSTRAP=true: skipping 002_least_privilege_grants.sql. ' +
+          'Use this only on a managed single-role database; the local Compose stack must keep least-privilege roles.',
+      );
+    }
 
     for (const file of files) {
       const applied = await client.query('SELECT 1 FROM schema_migrations WHERE filename = $1', [file]);
@@ -64,6 +95,11 @@ async function migrate(): Promise<void> {
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
+        const dbError = error as { message?: string; code?: string; detail?: string; hint?: string };
+        console.error(`Migration failed in ${file}: ${dbError.message || String(error)}`);
+        if (dbError.code) console.error(`PostgreSQL code: ${dbError.code}`);
+        if (dbError.detail) console.error(`Detail: ${dbError.detail}`);
+        if (dbError.hint) console.error(`Hint: ${dbError.hint}`);
         throw error;
       }
     }
@@ -74,7 +110,14 @@ async function migrate(): Promise<void> {
   }
 }
 
-migrate().catch((error) => {
+migrate().catch((error: unknown) => {
+  const dbError = error as { message?: string; code?: string; detail?: string; hint?: string };
+  // The platform log viewer may render only the message string and drop pino
+  // fields. Print the actionable PostgreSQL error explicitly before exiting.
+  console.error(`Migration failed: ${dbError.message || String(error)}`);
+  if (dbError.code) console.error(`PostgreSQL code: ${dbError.code}`);
+  if (dbError.detail) console.error(`Detail: ${dbError.detail}`);
+  if (dbError.hint) console.error(`Hint: ${dbError.hint}`);
   logger.error({ err: error }, 'Migration failed');
   process.exit(1);
 });

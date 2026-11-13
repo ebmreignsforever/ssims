@@ -5,7 +5,9 @@
 -- bind parameters (never string-concatenated user input).
 -- =============================================================================
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- PostgreSQL 16+ provides gen_random_uuid() in core, so no extension is
+-- required. Avoiding pgcrypto also keeps migrations compatible with managed
+-- PostgreSQL services where the application role cannot create extensions.
 
 DO $$ BEGIN
   CREATE TYPE user_role AS ENUM ('super_admin', 'administrator', 'lecturer', 'student');
