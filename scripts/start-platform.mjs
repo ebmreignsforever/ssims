@@ -33,6 +33,10 @@ if (!existsSync(path.join(frontend, 'index.html'))) {
   process.exit(1);
 }
 
+// The platform's PORT is authoritative. A stale API_PORT copied from a local
+// .env must not make the service bind 4000 while the proxy routes elsewhere.
+if (process.env.PORT) process.env.API_PORT = process.env.PORT;
+
 // Serve the SPA from Express. A platform-provided value still wins.
 process.env.NODE_ENV ??= 'production';
 process.env.SERVE_FRONTEND ??= 'true';

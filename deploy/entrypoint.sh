@@ -11,7 +11,10 @@ if [ -z "${FRONTEND_ORIGIN:-}" ] && [ -n "${RENDER_EXTERNAL_URL:-}" ]; then
   export FRONTEND_ORIGIN="$RENDER_EXTERNAL_URL"
 fi
 
-if [ -z "${API_PORT:-}" ] && [ -n "${PORT:-}" ]; then
+# The hosting platform's injected PORT is authoritative. An old API_PORT value
+# copied from local development must not make the container listen on 4000 while
+# the proxy routes to the platform-assigned port.
+if [ -n "${PORT:-}" ]; then
   export API_PORT="$PORT"
 fi
 
