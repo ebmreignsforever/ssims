@@ -37,9 +37,12 @@ export function createApp() {
 
   app.use(requestContext);
   app.use(securityHeaders);
-  // JSON API responses are deliberately not compressed: they can contain CSRF
-  // tokens and compression side-channels (BREACH) should be avoided.
+  // CORS is only meaningful for API calls. Applying it globally also filters
+  // same-origin module-script/style requests for /assets/*, which browsers send
+  // with an Origin header when the SPA is served by Express. Keep static assets
+  // outside the CORS policy; API requests still enforce the exact origin list.
   app.use(
+    '/api',
     cors({
       origin(origin, callback) {
         if (!origin || config.allowedOrigins.includes(origin)) {
