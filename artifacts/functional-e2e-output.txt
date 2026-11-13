@@ -1,0 +1,58 @@
+SSIMS functional end-to-end verification
+Target: http://127.0.0.1:4000
+
+  ✓ Administrator signs in
+
+Department and course management
+  ✓ Administrator creates a department
+  ✓ Administrator creates a lecturer with a one-time password
+  ✓ Administrator creates a course and assigns the lecturer
+  ✓ Administrator can locate a seeded student record
+  ✓ Administrator enrolls a student
+
+Lecturer scope and grading
+  ✓ New lecturer signs in with the temporary credential
+  ✓ Temporary credential is restricted to password change — status 403 code PASSWORD_CHANGE_REQUIRED
+  ✓ Lecturer replaces the temporary password
+  ✓ Lecturer signs in with the permanent password — status 200 mustChange=false code=none
+  ✓ Lecturer teaching dashboard loads
+  ✓ Assigned lecturer can read the course roster
+  ✓ Lecturer records a grade — letter C
+  ✓ Lecturer is denied another lecturer's roster — status 403
+  ✓ Lecturer is denied the administrator dashboard
+  ✓ Student signs in
+  ✓ Student sees the course and recorded grade — C
+  ✓ Student is denied lecturer endpoints
+
+Administrative restrictions
+  ✓ Administrator cannot modify a super administrator
+  ✓ Administrator cannot create another administrator
+  ✓ Administrator suspends the lecturer
+  ✓ Suspension invalidates the lecturer session — status 401
+  ✓ Administrator issues a new temporary password
+  ✓ Lecturer signs in with the new temporary password and is forced to change it
+
+Public registration and password reset
+  ✓ Public student registration creates a student account
+  ✓ Duplicate registration is rejected
+  ✓ Weak password registration is rejected
+  ✓ Registered student can sign in
+  ✓ Student updates permitted profile fields
+  ✓ Password reset link is issued in development
+  ✓ Password reset completes with a single-use token
+  ✓ Old password is rejected after reset
+  ✓ New password is accepted after reset
+  ✓ Reset token cannot be reused
+
+Security policy and network rules
+  ✓ Super administrator signs in
+  ✓ Super administrator reads access policy
+  ✓ Super administrator updates and restores policy
+  ✓ Administrator cannot edit security policy
+  ✓ Administrator creates an IP deny rule
+  ✓ Administrator removes the IP rule
+  ✓ Department with a course cannot be deleted
+
+Result: 41/41 functional checks passed.
+
+[cleanup] Removed functional test rows (audit/security events remain).

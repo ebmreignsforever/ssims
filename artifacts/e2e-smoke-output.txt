@@ -1,0 +1,66 @@
+SSIMS end-to-end security verification
+Target: http://127.0.0.1:4000
+
+
+1. Health and public metadata
+  ✓ API is healthy and connected to PostgreSQL
+  ✓ Public security metadata endpoint responds
+
+2. Administrator authentication and RBAC
+  ✓ Administrator signs in with Argon2id credentials
+  ✓ HttpOnly refresh cookie is issued
+  ✓ CSRF double-submit cookie is issued
+  ✓ Access token authenticates /auth/me
+  ✓ Administrator can read security dashboard metrics
+  ✓ Administrator can list users with RBAC permission
+
+3. Student authentication and server-side authorisation
+  ✓ Student signs in successfully
+  ✓ Student receives HTTP 403 on administrator endpoint — status 403
+  ✓ Student can read only their own academic results
+
+4. CSRF and refresh-token rotation
+  ✓ Refresh request without the CSRF header is rejected — status 403 code CSRF_VALIDATION_FAILED
+  ✓ Unauthenticated refresh is rejected
+  ✓ Refresh token rotates on use
+  ✓ Replayed refresh token is rejected — status 401
+  ✓ Administrator re-authenticates after session-family revocation
+
+5. MFA enrolment, login, recovery code and disable
+  ✓ TOTP secret and QR code are generated
+  ✓ MFA enabled with ten single-use backup codes
+  ✓ Password alone is refused when MFA is enabled
+  ✓ A backup recovery code completes MFA login
+  ✓ MFA can be disabled with password + fresh TOTP code — status 200
+
+6. Webhook HMAC, expiry and replay protection
+  ✓ Valid HMAC-SHA256 webhook is accepted — status 202
+  ✓ Replay of a processed event ID is rejected — status 409
+  ✓ Invalid webhook signature is rejected — status 401
+
+7. Security Testing Lab (real backend demonstrations)
+  ✓ Eight laboratory tests are registered
+  ✓ Lab sql-injection completed — passed: The bound parameter was treated as a literal string. 0 rows matched; the injection did not alter que
+  ✓ Lab xss completed — passed: The server-side sanitiser stripped the script/image tags and the event handler. React renders the re
+  ✓ Lab unauthorized-access completed — passed: The administrator endpoint returned HTTP 403 (FORBIDDEN). No user records were disclosed. The tempor
+  ✓ Lab mitm completed — info: Local development is running with database TLS disabled (or certificate verification not enabled) an
+  ✓ Lab csrf completed — passed: The forged refresh request was rejected with HTTP 403 CSRF_VALIDATION_FAILED before token rotation. 
+  ✓ Lab webhook-forgery completed — passed: The forged webhook was rejected with HTTP 401 WEBHOOK_INVALID_SIGNATURE. The signature check failed 
+  ✓ Lab ddos completed — passed: Controlled burst completed: 8 requests succeeded and 4 were throttled with HTTP 429. The application
+  ✓ Lab brute-force completed — passed: Account protection engaged after 5 failed attempts. The final request returned HTTP 423 and the acco
+  ✓ Laboratory brute-force target restored
+
+8. Security telemetry and audit visibility
+  ✓ Security events can be filtered by severity
+  ✓ Login attempt telemetry is available
+  ✓ Database audit log is available to administrators
+  ✓ Administrator can view IP access rules
+
+9. Kerberos simulation
+  ✓ Kerberos simulation completes mutual authentication and replay rejection — 7 protocol steps
+
+10. Logout and session invalidation
+  ✓ Logout revokes the current session
+  ✓ Revoked session can no longer access protected endpoints
+
+Result: 41/41 checks passed.

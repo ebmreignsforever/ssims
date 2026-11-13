@@ -1,0 +1,231 @@
+# =============================================================================
+# SSIMS — complete containerised deployment
+#
+#   docker compose up --build
+#
+# Public edge: https://localhost (self-signed local CA; see README)
+# Only Nginx publishes ports. PostgreSQL is never reachable from the host.
+#
+# Networks are segmented:
+#   edge_net  : public -> Nginx only
+#   app_net   : Nginx, frontend, API
+#   db_net    : API, migration service, PostgreSQL
+#   admin_net : PostgreSQL and optional Adminer (profile "admin")
+# =============================================================================
+name: ssims
+
+services:
+  cert-init:
+    build:
+      context: .
+      dockerfile: infra/certs/Dockerfile
+    volumes:
+      - ca_certs:/ca
+      - web_certs:/web
+      - db_certs:/db
+      - ./infra/certs/generated:/export
+    network_mode: "none"
+    restart: "no"
+
+  db:
+    build:
+      context: .
+      dockerfile: infra/postgres/Dockerfile
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ssims}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?Set POSTGRES_SUPERUSER_PASSWORD in .env}
+      POSTGRES_OWNER_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?Set POSTGRES_OWNER_PASSWORD in .env}
+      POSTGRES_APP_USER: ${POSTGRES_APP_USER:-ssims_app}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD in .env}
+      POSTGRES_RO_PASSWORD: ${POSTGRES_RO_PASSWORD:?Set POSTGRES_RO_PASSWORD in .env}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - db_certs:/var/lib/postgresql/certs:ro
+    depends_on:
+      cert-init:
+        condition: service_completed_successfully
+    networks:
+      - db_net
+      - admin_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ssims}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+
+  migrate:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["sh", "-c", "node dist/db/migrate.js && node dist/scripts/seed.js"]
+    environment:
+      NODE_ENV: production
+      DATABASE_ADMIN_URL: postgresql://ssims_owner:${POSTGRES_OWNER_PASSWORD}@db:5432/${POSTGRES_DB:-ssims}
+      DATABASE_URL: postgresql://${POSTGRES_APP_USER:-ssims_app}:${POSTGRES_APP_PASSWORD}@db:5432/${POSTGRES_DB:-ssims}
+      DB_SSL_MODE: verify-full
+      DB_SSL_CA: /app/certs/public/ssims-local-ca.crt
+      DB_SSL_SERVERNAME: db
+      MIGRATIONS_DIR: /app/database/migrations
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
+      COOKIE_SECRET: ${COOKIE_SECRET:?Set COOKIE_SECRET in .env}
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?Set MFA_ENCRYPTION_KEY in .env}
+      CHALLENGE_SECRET: ${CHALLENGE_SECRET:?Set CHALLENGE_SECRET in .env}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?Set WEBHOOK_SECRET in .env}
+      COOKIE_SECURE: "true"
+      FRONTEND_ORIGIN: ${PUBLIC_ORIGIN:-https://localhost}
+      EXPOSE_RESET_TOKEN: "false"
+      SEED_SUPER_ADMIN_EMAIL: ${SEED_SUPER_ADMIN_EMAIL:-superadmin@ssims.edu}
+      SEED_SUPER_ADMIN_PASSWORD: ${SEED_SUPER_ADMIN_PASSWORD:?Set SEED_SUPER_ADMIN_PASSWORD in .env}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@ssims.edu}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?Set SEED_ADMIN_PASSWORD in .env}
+      SEED_LECTURER_EMAIL: ${SEED_LECTURER_EMAIL:-lecturer@ssims.edu}
+      SEED_LECTURER_PASSWORD: ${SEED_LECTURER_PASSWORD:?Set SEED_LECTURER_PASSWORD in .env}
+      SEED_STUDENT_EMAIL: ${SEED_STUDENT_EMAIL:-student@ssims.edu}
+      SEED_STUDENT_PASSWORD: ${SEED_STUDENT_PASSWORD:?Set SEED_STUDENT_PASSWORD in .env}
+      SEED_LAB_EMAIL: ${SEED_LAB_EMAIL:-security.lab@ssims.edu}
+      SEED_LAB_PASSWORD: ${SEED_LAB_PASSWORD:?Set SEED_LAB_PASSWORD in .env}
+    volumes:
+      - ./infra/certs/generated:/app/certs/public:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      cert-init:
+        condition: service_completed_successfully
+    networks:
+      - db_net
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      NODE_ENV: production
+      API_PORT: "4000"
+      DATABASE_URL: postgresql://${POSTGRES_APP_USER:-ssims_app}:${POSTGRES_APP_PASSWORD}@db:5432/${POSTGRES_DB:-ssims}
+      DB_SSL_MODE: verify-full
+      DB_SSL_CA: /app/certs/public/ssims-local-ca.crt
+      DB_SSL_SERVERNAME: db
+      DB_POOL_MAX: "15"
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
+      COOKIE_SECRET: ${COOKIE_SECRET:?Set COOKIE_SECRET in .env}
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?Set MFA_ENCRYPTION_KEY in .env}
+      CHALLENGE_SECRET: ${CHALLENGE_SECRET:?Set CHALLENGE_SECRET in .env}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?Set WEBHOOK_SECRET in .env}
+      ACCESS_TOKEN_TTL_SECONDS: "900"
+      REFRESH_TOKEN_TTL_DAYS: "7"
+      COOKIE_SECURE: "true"
+      TRUST_PROXY: "1"
+      FRONTEND_ORIGIN: ${PUBLIC_ORIGIN:-https://localhost}
+      ADDITIONAL_ORIGINS: ${ADDITIONAL_ORIGINS:-}
+      EXPOSE_RESET_TOKEN: "false"
+      LOG_LEVEL: info
+    volumes:
+      - ./infra/certs/generated:/app/certs/public:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      cert-init:
+        condition: service_completed_successfully
+    networks:
+      - app_net
+      - db_net
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,noexec,nosuid,nodev
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    networks:
+      - app_net
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid,nodev
+      - /var/cache/nginx:size=32m,noexec,nosuid,nodev
+      - /var/run:size=4m,noexec,nosuid,nodev
+    security_opt:
+      - no-new-privileges:true
+
+  nginx:
+    build:
+      context: ./infra/nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:8080"
+      - "443:8443"
+    volumes:
+      - web_certs:/etc/nginx/certs:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+      cert-init:
+        condition: service_completed_successfully
+    networks:
+      - edge_net
+      - app_net
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid,nodev
+      - /var/cache/nginx:size=32m,noexec,nosuid,nodev
+      - /var/run:size=4m,noexec,nosuid,nodev
+    security_opt:
+      - no-new-privileges:true
+
+  # Optional database administration UI. Not started by default. It is bound to
+  # localhost only and attached exclusively to the internal admin/db segments.
+  #   docker compose --profile admin up -d adminer
+  adminer:
+    image: adminer:6.3.0
+    profiles: ["admin"]
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+      ADMINER_DESIGN: pepa-linha-dark
+    networks:
+      - admin_net
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  edge_net:
+    driver: bridge
+  app_net:
+    driver: bridge
+    internal: true
+  db_net:
+    driver: bridge
+    internal: true
+  admin_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  pg_data:
+  ca_certs:
+  web_certs:
+  db_certs:

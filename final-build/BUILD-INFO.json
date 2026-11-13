@@ -1,0 +1,14 @@
+﻿{
+    "name":  "SSIMS Final Build",
+    "buildType":  "standalone Node.js (API + SPA)",
+    "builtAt":  "2026-11-13T00:34:38.3425756+00:00",
+    "nodeRuntime":  "v24.21.0",
+    "nodeBundled":  true,
+    "localEnvPresent":  true,
+    "zipExcludesEnv":  true,
+    "frontendAssets":  5,
+    "backendFiles":  76,
+    "dependencyFiles":  3316,
+    "frontendEntry":  "frontend/index.html",
+    "backendEntry":  "backend/dist/server.js"
+}

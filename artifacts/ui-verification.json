@@ -1,0 +1,169 @@
+{
+  "checks": [
+    {
+      "name": "Login page renders",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Security portal branding renders",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Administrator dashboard loads",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Dashboard metrics render",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Authentication chart renders",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Administrator session survives a full page refresh",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "User management page loads",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Course catalogue renders",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Security monitoring page loads",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Security event rows render",
+      "status": "PASS",
+      "detail": "20 rows"
+    },
+    {
+      "name": "Security Testing Lab loads",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Eight test cards render",
+      "status": "PASS",
+      "detail": "8 cards"
+    },
+    {
+      "name": "Kerberos simulation page loads",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Simulation disclaimer is visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Administrator security settings load",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Student dashboard loads",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Student GPA card renders",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Student session survives a full page refresh",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Student results transcript loads",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "MFA management controls render",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Lecturer dashboard loads",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Teaching metrics render",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Lecturer course cards render",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Course workspace roster loads",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Mobile login page renders without horizontal overflow",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Mobile student dashboard renders",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Mobile navigation drawer opens",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "No browser console errors",
+      "status": "PASS",
+      "detail": "0 unique"
+    },
+    {
+      "name": "No unexpected API errors during UI navigation",
+      "status": "PASS",
+      "detail": "0 unique"
+    }
+  ],
+  "consoleErrors": [],
+  "apiErrors": [],
+  "screenshots": [
+    "artifacts\\screenshots\\01-login-desktop.png",
+    "artifacts\\screenshots\\02-admin-dashboard.png",
+    "artifacts\\screenshots\\03-admin-users.png",
+    "artifacts\\screenshots\\04-admin-courses.png",
+    "artifacts\\screenshots\\05-security-monitoring.png",
+    "artifacts\\screenshots\\06-security-lab.png",
+    "artifacts\\screenshots\\07-kerberos.png",
+    "artifacts\\screenshots\\08-security-settings.png",
+    "artifacts\\screenshots\\09-student-dashboard.png",
+    "artifacts\\screenshots\\10-student-results.png",
+    "artifacts\\screenshots\\11-student-security.png",
+    "artifacts\\screenshots\\12-lecturer-dashboard.png",
+    "artifacts\\screenshots\\13-lecturer-courses.png",
+    "artifacts\\screenshots\\14-course-workspace.png",
+    "artifacts\\screenshots\\15-login-mobile.png",
+    "artifacts\\screenshots\\16-mobile-dashboard.png"
+  ]
+}

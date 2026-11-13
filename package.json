@@ -1,0 +1,25 @@
+{
+  "name": "ssims",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.28.5",
+  "engines": {
+    "node": ">=22"
+  },
+  "description": "Secure Student Information Management System",
+  "scripts": {
+    "dev:backend": "pnpm --dir backend dev",
+    "dev:frontend": "pnpm --dir frontend dev",
+    "build": "pnpm --dir backend build && pnpm --dir frontend build",
+    "test": "pnpm --dir backend test",
+    "test:e2e": "node scripts/e2e-smoke.mjs",
+    "test:functional": "node scripts/functional-e2e.mjs",
+    "test:ui": "node scripts/ui-verify.mjs",
+    "migrate": "pnpm --dir backend migrate",
+    "seed": "pnpm --dir backend seed"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.65.0",
+    "yaml": "^2.9.1"
+  }
+}
